@@ -3,18 +3,14 @@
 	"main": "src/index.ts",
 	"name": "liff",
 	"d1_databases": [
-	{
-		"binding": "DB",
-		"database_id": "0fd774d7-d12c-443e-b9a2-072c99f68264",
-		"database_name": "manager"
-	}
+		{
+			"binding": "DB",
+			"database_id": "0fd774d7-d12c-443e-b9a2-072c99f68264",
+			"database_name": "manager"
+		}
 	],
+	"upload_source_maps": true,
 	"observability": {
 		"enabled": true
-	},
-	"assets": {
-		"directory": "./public/",
-		"binding": "ASSETS",
-		"run_worker_first": true
-	},
+	}
 }

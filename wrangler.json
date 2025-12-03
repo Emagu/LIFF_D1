@@ -12,5 +12,15 @@
 	"upload_source_maps": true,
 	"observability": {
 		"enabled": true
-	}
+	},
+	"build": {
+		"command": "npm install",
+		"cwd": "."
+	},
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS"
+	},
+
 }
+

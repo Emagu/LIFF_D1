@@ -26,7 +26,7 @@
          <div id="actionsArea"></div>
       </div>
       <script>
-        const WORKER_API_BASE = 'https://你的-worker.example.workers.dev/api'; // <-- 改成部署後的 URL
+        const WORKER_API_BASE = './api'; // <-- 改成部署後的 URL
 		
 		async function initLIFF() {
 			try {
@@ -38,10 +38,25 @@
 					liff.login();
 					return;
 				}
+
+				const profile = await liff.getProfile();
+				// idToken 若需要由 server 驗證，請改傳 idToken；這裡作 demo 傳 profile
+				const payload = { lineId: profile.userId, displayName: profile.displayName, pictureUrl: profile.pictureUrl };
+
+
+				const res = await fetch(`${WORKER_API_BASE}/employees/login`, {
+				method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+				});
+				const json = await res.json();
+				if (!res.ok) throw new Error(json.message || 'login error');
+
+
 				document.getElementById('status').innerText = `登入: ${json.displayName}（狀態: ${json.status}）`;
+
+
 				if (json.status !== 'enabled') {
-					document.getElementById('status').innerText += '\n帳號尚未授權，請管理員手動啟用（SQL 調整）';
-					return;
+				document.getElementById('status').innerText += '\n帳號尚未授權，請管理員手動啟用（SQL 調整）';
+				return;
 				}
 				document.getElementById('controls').style.display = 'block';
 				loadBeds(json.employeeId);
@@ -49,7 +64,6 @@
                 document.getElementById('status').innerText = '初始化失敗: ' + e.message;
             }
         }
-
 
         async function loadBeds(employeeId) {
             const res = await fetch(`${WORKER_API_BASE}/beds?employeeId=${employeeId}`);

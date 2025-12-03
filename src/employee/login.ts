@@ -1,28 +1,29 @@
+import type { Context } from 'hono'
 import type { Env } from '../index'
 
-export default async function Login(request: Request, env: Env) {
-  const body = await request.json()
-
-  const { lineUserId, name, pictureUrl } = body
+export async function loginHandler(c: Context<Env>) {
+  const body = await c.req.json()
+  const { lineUserId, name, token } = body
 
   if (!lineUserId) {
-    return new Response(JSON.stringify({ error: "lineUserId is required" }), { status: 400 })
+    return c.json({ error: "lineUserId is required" }, 400)
   }
 
   // 查詢是否已存在員工
-  const employee = await env.DB.prepare(
-    "SELECT * FROM employees WHERE lineId = ?"
-  ).bind(lineUserId).first()
+  const employee = await c.env.DB
+    .prepare("SELECT * FROM employees WHERE line_id = ?")
+    .bind(lineUserId)
+    .first()
 
   // 如果不存在，預設 disabled
   if (!employee) {
-    await env.DB.prepare(`
-      INSERT INTO employees (lineId, name, token, status)
-      VALUES (?, ?, ?, "disabled")
+    await c.env.DB.prepare(`
+      INSERT INTO employees (line_id, name, status)
+      VALUES (?, ?, ?)
     `)
-    .bind(lineUserId, name ?? "", crypto.randomUUID())
-    .run()
+	.bind(lineUserId, name ?? "", "disabled")
+	.run();
   }
 
-  return new Response(JSON.stringify({ ok: true }))
+  return c.json({ ok: true })
 }

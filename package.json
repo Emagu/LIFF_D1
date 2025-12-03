@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "itty-router": "^5.0.22"
+    "hono": "^4.10.7"
   }
 }

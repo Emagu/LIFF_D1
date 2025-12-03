@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-Hant">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>智能蘭園管理 — LIFF</title>
+      <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+      <style>
+         body{font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', 'Helvetica Neue', Arial; padding:16px}
+         button{padding:8px 12px; margin:6px}
+         select{padding:6px; margin:6px}
+         .card{border:1px solid #eee;padding:12px;border-radius:8px;margin:8px 0}
+      </style>
+   </head>
+   <body>
+      <h2>智能蘭園管理 (LIFF)</h2>
+      <div id="status">初始化中...</div>
+      <div id="controls" style="display:none">
+         <div>
+            <label>選擇植床：</label>
+            <select id="bedsSelect">
+               <option>載入中...</option>
+            </select>
+         </div>
+         <div id="batchesArea"></div>
+         <div id="actionsArea"></div>
+      </div>
+      <script>
+        const WORKER_API_BASE = 'https://你的-worker.example.workers.dev/api'; // <-- 改成部署後的 URL
+		
+		async function initLIFF() {
+			try {
+				await liff.init({
+					liffId: 'YOUR_LIFF_ID'
+				});
+				document.getElementById('status').innerText = '已連線 LIFF';
+				if (!liff.isLoggedIn()) {
+					liff.login();
+					return;
+				}
+				document.getElementById('status').innerText = `登入: ${json.displayName}（狀態: ${json.status}）`;
+				if (json.status !== 'enabled') {
+					document.getElementById('status').innerText += '\n帳號尚未授權，請管理員手動啟用（SQL 調整）';
+					return;
+				}
+				document.getElementById('controls').style.display = 'block';
+				loadBeds(json.employeeId);
+            } catch (e) {
+                document.getElementById('status').innerText = '初始化失敗: ' + e.message;
+            }
+        }
+
+
+        async function loadBeds(employeeId) {
+            const res = await fetch(`${WORKER_API_BASE}/beds?employeeId=${employeeId}`);
+            const beds = await res.json();
+            const sel = document.getElementById('bedsSelect');
+            sel.innerHTML = '';
+            beds.forEach(b => {
+                const op = document.createElement('option');
+                op.value = b.id;
+                op.textContent = `${b.name} (編號:${b.id})`;
+                sel.appendChild(op);
+            });
+            sel.addEventListener('change', () => selectBed(sel.value));
+            if (beds.length) selectBed(beds[0].id);
+        }
+
+
+        async function selectBed(bedId) {
+            const batchesRes = await fetch(`${WORKER_API_BASE}/beds/${bedId}/batches`);
+            const batches = await batchesRes.json();
+            const batchesArea = document.getElementById('batchesArea');
+            batchesArea.innerHTML = '<h3>此床的植株批次</h3>';
+            batches.forEach(b => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `<strong>批次: ${b.batch_code}</strong><div>品種: ${b.species}</div><div>數量: ${b.quantity}</div>`;
+                batchesArea.appendChild(div);
+            });
+
+
+            const actionsRes = await fetch(`${WORKER_API_BASE}/actions`);
+            const actions = await actionsRes.json();
+            const actionsArea = document.getElementById('actionsArea');
+            actionsArea.innerHTML = '<h3>可選行為</h3>';
+            actions.forEach(a => {
+                const btn = document.createElement('button');
+                btn.textContent = `${a.name}`;
+                btn.addEventListener('click', () => performAction(bedId, a.id));
+                actionsArea.appendChild(btn);
+            });
+        }
+
+
+        async function performAction(bedId, actionId) {
+            const res = await fetch(`${WORKER_API_BASE}/actions/execute`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    bedId,
+                    actionId
+                })
+            });
+            const json = await res.json();
+            alert(json.message || '已執行');
+        }
+
+
+        initLIFF();
+      </script>
+   </body>
+</html>

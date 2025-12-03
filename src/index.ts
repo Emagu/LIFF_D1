@@ -3,8 +3,6 @@ import { router } from './router'
 
 export interface Env {
   DB: D1Database
-  EMPLOYEE_KV: KVNamespace
-  SECRET: string
 }
 
 export default {
